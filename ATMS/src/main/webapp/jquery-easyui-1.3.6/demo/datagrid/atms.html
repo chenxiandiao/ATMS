@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Basic DataGrid - jQuery EasyUI Demo</title>
+	<link rel="stylesheet" type="text/css" href="../../themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="../../themes/icon.css">
+	<link rel="stylesheet" type="text/css" href="../demo.css">
+	<script type="text/javascript" src="../../jquery.min.js"></script>
+	<script type="text/javascript" src="../../jquery.easyui.min.js"></script>
+	<script type="text/javascript">
+	$(document).ready(function(){
+		
+		$.ajax({
+			url:'/ATMS/TableController/showTableColumn',
+			type:'get',
+			dataType:'json',
+			success:function(data){
+				$('#dg').datagrid({
+				    //columns:'/ATMS/TableController/showTableColumn'
+					columns:data
+				});
+			}
+		})
+		
+	});
+	</script>
+</head>
+<body>
+	<table id="dg"></table>
+</body>
+</html>
