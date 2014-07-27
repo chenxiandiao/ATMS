@@ -5,31 +5,35 @@ import java.util.List;
 
 import model.ColumnHeader;
 
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import dao.TableDaoImpl;
+
 @Controller
 @RequestMapping(value="/TableController")
 public class TableController {
+	
+	@Autowired
+	private TableDaoImpl tableDaoImpl;
 	
 	@RequestMapping(value="/showTableColumn")
 	@ResponseBody
 	public List<List<ColumnHeader>> showTableColumn(){
 		System.out.println("showTableColumn");
 		List<List<ColumnHeader>> data = new ArrayList<List<ColumnHeader>>();
-		List<ColumnHeader>firstColumnList = new ArrayList<ColumnHeader>();
-		firstColumnList.add(new ColumnHeader("itemid","item ID",2,1,true));
-		firstColumnList.add(new ColumnHeader("Item Details","Item Details",1,4,true));
-		
-		List<ColumnHeader>secondColumnList = new ArrayList<ColumnHeader>();
-		secondColumnList.add(new ColumnHeader("listprice","'List Price",1,1,true));
-		secondColumnList.add(new ColumnHeader("unitcost","Unit Cost",1,1,true));
-		secondColumnList.add(new ColumnHeader("attr1","Attribute",1,1,true));
-		secondColumnList.add(new ColumnHeader("status","status",1,1,true));
-		
-		data.add(firstColumnList);
-		data.add(secondColumnList);
+		data = tableDaoImpl.showTableHeader();
 		return data;
+	}
+	
+	@RequestMapping(value="/showTableData")
+	@ResponseBody
+	public String showTableData(){
+		System.out.println("showTableData");
+		JSONObject data = tableDaoImpl.showTableData();
+		return data.toString();
 	}
 }

@@ -21,15 +21,13 @@ import java.util.Properties;
  */
 @Configuration
 @ComponentScan(basePackages = {
-//		"cn.zgnet.imovie.imovieaccount.daoImpl",
-//		"cn.zgnet.imovie.imoviecrew.daoImpl",
-//		"cn.zgnet.imovie.imoviescript.daoImpl"
+		"dao",
 })
 @EnableTransactionManagement
 public class JpaContext {
 
     private static final String[] PROPERTY_PACKAGES_TO_SCAN = {
-//    		"cn.zgnet.imovie.imovieaccount.model",
+    		"dbmodel"
 //    		"cn.zgnet.imovie.imoviescript.model",
 //    		"cn.zgnet.imovie.imoviecrew.model"
     		

@@ -18,7 +18,8 @@
 			success:function(data){
 				$('#dg').datagrid({
 				    //columns:'/ATMS/TableController/showTableColumn'
-					columns:data
+					columns:data,
+					url:'/ATMS/TableController/showTableData'
 				});
 			}
 		})
