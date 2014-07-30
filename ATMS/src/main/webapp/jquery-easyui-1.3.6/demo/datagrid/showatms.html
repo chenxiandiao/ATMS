@@ -13,17 +13,10 @@
 	function columnHeader(){
 		 this.field = "";
 		 this.title = "";
-		 this.rowspan = 1;
-		 this.colspan = 1;
-		 this.sortable = true;
-		 this.showTag = true;
-	}
-	
-	function filterType(){
-		this.columnId = 1;
-		this.type = "";
-		this.operation = "";
-		this.value = "";
+		 //this.rowspan = 1;
+		 //this.colspan = 1;
+		 //this.sortable = true;
+		 //this.showTag = true;
 	}
 	
 	function showTable()
@@ -41,22 +34,6 @@
 			}
 		})
 		
-	}
-	
-	function showTableByFilter()
-	{
-		$.ajax({
-			url:'/ATMS/TableController/showTableColumn',
-			type:'get',
-			dataType:'json',
-			success:function(data){
-				$('#dg').datagrid({
-				    //columns:'/ATMS/TableController/showTableColumn'
-					columns:data,
-					url:'/ATMS/TableController/searchByFilter'
-				});
-			}
-		})
 	}
 	
 	function test(){
@@ -79,6 +56,8 @@
 		_columnHeader2.showTag = "true";
 		columnArray.push(_columnHeader2);
 		
+		
+		
 		var data = JSON.stringify(columnArray);
 		$.ajax({
 			url:'/ATMS/TableController/setShowColumn',
@@ -92,51 +71,13 @@
 		});
 	}
 	
-	function getFilter(){
-		$.ajax({
-			url:'/ATMS/TableController/getFilter',
-			type:'get',
-			dataType:'json',
-			success:function(data){
-				for(var i=0;i<data.length;i++)
-				{
-					alert(data[i].field+" "+data[i].data_type);
-				}
-				
-			}
-		});	
-	}
-	
-	function searchBtnClick(){
-		$("#searchbtn").click(function(){
-			var searchKey = $("#searchKey").val();
-			$.ajax({
-				url:'/ATMS/TableController/searchByNumber',
-				type:'post',
-				dataType:'json',
-				data:{"searchKey":searchKey},
-				success:function(data){
-					alert(data.rows.length);
-					$('#dg').datagrid({
-						data:data.rows
-					});
-				}
-			})
-		});
-	}
 	$(document).ready(function(){
 		//test();
-		 showTable();
-		 searchBtnClick();
-		//getFilter();
+		showTable();
 	});
 	</script>
 </head>
 <body>
-	<div>
-		<input id="searchKey" type="text"/>
-		<input id="searchbtn" type="button" value="查询"/>
-	</div>
 	<table id="dg"></table>
 </body>
 </html>
