@@ -101,6 +101,7 @@ public class TableController {
 	@ResponseBody
 	public String showTableDataOfSearchByFilter(@RequestBody List<FilterType>filterTypeList)
 	{
+		System.out.println("searchByFilter");
 		JSONObject data = tableDaoImpl.getTableDataByFilter(columnIdList,filterTypeList);
 		return data.toString();
 	}

@@ -20,9 +20,8 @@
 	}
 	
 	function filterType(){
-		this.columnId = 1;
-		this.type = "";
-		this.operation = "";
+		this.field = 1;
+		this.op = "";
 		this.value = "";
 	}
 	
@@ -45,16 +44,27 @@
 	
 	function showTableByFilter()
 	{
+		var filterArray = [];
+		var filter = new filterType();
+		filter.field = 2;
+		filter.op="larger";
+		filter.value="266";
+		filterArray.push(filter);
+		var filter2 = new filterType();
+		filter2.field = 7;
+		filter2.op = "larger";
+		filter2.value = "14.0";
+		filterArray.push(filter2);
+		var headerData = JSON.stringify(filterArray);
 		$.ajax({
-			url:'/ATMS/TableController/showTableColumn',
-			type:'get',
+			url:'/ATMS/TableController/searchByFilter',
 			dataType:'json',
+			data:headerData,
+			type:'post',
+			contentType:"application/json",
 			success:function(data){
-				$('#dg').datagrid({
-				    //columns:'/ATMS/TableController/showTableColumn'
-					columns:data,
-					url:'/ATMS/TableController/searchByFilter'
-				});
+				alert("hello");
+				//alert(data.rows.length);
 			}
 		})
 	}
@@ -117,18 +127,16 @@
 				data:{"searchKey":searchKey},
 				success:function(data){
 					alert(data.rows.length);
-					$('#dg').datagrid({
-						data:data.rows
-					});
 				}
 			})
 		});
 	}
 	$(document).ready(function(){
 		//test();
-		 showTable();
-		 searchBtnClick();
+		showTable();
+		// searchBtnClick();
 		//getFilter();
+		//showTableByFilter();
 	});
 	</script>
 </head>

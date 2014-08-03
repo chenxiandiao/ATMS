@@ -9,6 +9,7 @@ import javax.persistence.Query;
 
 import model.ColumnHeader;
 import model.FilterType;
+import model.TableData;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -76,41 +77,63 @@ public class TableDaoImpl{
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
 		
 		//String sql = "SELECT a.row_id,b.column_id,a.data_value FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id like '%' order by a.row_id,b.column_id ";
-		String sql = "SELECT a.row_id,b.column_id,a.data_value FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") order by a.row_id,b.column_id ";
-		
+		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") order by a.row_id,b.column_id ";
+		System.out.println(sql);
 		return getTableData(sql);
 	}
 	private JSONObject getTableData(String sql)
 	{	
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
-		JSONObject tableData = new JSONObject();
+		JSONObject tableDataJsonObject = new JSONObject();
 		int row_id = 0;
 		int pref_row_id = -1;
 		String field = "";
 		String value = "";
+		int formula_type = 0;
 		JSONObject row = null;
 		JSONArray rowsList = new JSONArray();
 		int rowCnt = 0;
+		List<TableData>tableDataList = new ArrayList<TableData>();
 		for(int i = 0;i<list.size();i++)
 		{
 			Object[]obj = (Object[])list.get(i);
 			row_id = (Integer) obj[0];
 			field = obj[1].toString();
 			value = obj[2].toString();
+			formula_type = (Integer) obj[3];
 			if(row_id!=pref_row_id)
 			{
 				if(row!=null)
 				{
+					for(int j=0;j<tableDataList.size();j++)
+					{
+						if(tableDataList.get(j).getFormula_type()==1)
+						{
+							
+						}
+					}
+					
 					rowsList.put(row);
 					rowCnt++;
 					row = new JSONObject();
+					tableDataList = new ArrayList<TableData>();
+					TableData  tableData = new TableData();
+					tableData.setField(field);
+					tableData.setValue(value);
+					tableData.setFormula_type(formula_type);
+					tableDataList.add(tableData);
 					row.put(field, value);
 				}
 				else
 				{
 					row = new JSONObject();
 					row.put(field, value);
+					TableData  tableData = new TableData();
+					tableData.setField(field);
+					tableData.setValue(value);
+					tableData.setFormula_type(formula_type);
+					tableDataList.add(tableData);
 				}
 				pref_row_id = row_id;
 				
@@ -124,9 +147,9 @@ public class TableDaoImpl{
 			}
 			
 		}
-		tableData.put("rows", rowsList);
-		tableData.put("count", rowCnt);
-		return tableData;
+		tableDataJsonObject.put("rows", rowsList);
+		tableDataJsonObject.put("count", rowCnt);
+		return tableDataJsonObject;
 	}
 	@Transactional
 	public boolean login(String username,String password)
@@ -178,7 +201,7 @@ public class TableDaoImpl{
 	@Transactional
 	public JSONObject getTableDataByNumber(List<Integer>columnIdList,String searchKey){
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
-		String sql = "SELECT a.row_id,b.column_id,a.data_value FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") and row_id in (select distinct(row_id) from tbl_prod_data where column_id in("+defaultColumnArrayStr+") and data_value_ignore like '%"+searchKey+"%') order by a.row_id,b.column_id";
+		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") and row_id in (select distinct(row_id) from tbl_prod_data where column_id in("+defaultColumnArrayStr+") and data_value_ignore like '%"+searchKey+"%') order by a.row_id,b.column_id";
 		return getTableData(sql);
 	}
 	
@@ -203,30 +226,64 @@ public class TableDaoImpl{
 	}
 	
 	@Transactional
+	public void setFilterType(List<FilterType>filterList)
+	{
+		String filterColumnId = "";
+		for(int i=0;i<filterList.size();i++)
+		{
+			filterColumnId = filterColumnId + filterList.get(i).getField() + ",";
+		}
+		if(filterColumnId!="")
+		{
+			filterColumnId = filterColumnId.substring(0, filterColumnId.length()-1);
+		}
+		String sql = "select data_type from tbl_prod_column where column_id in ("+filterColumnId+")";
+		Query query = em.createNativeQuery(sql);
+		List list = query.getResultList();
+		for(int i=0;i<list.size();i++)
+		{
+			String dataType = list.get(i).toString();
+			if(dataType.equals("number")||dataType.equals("money"))
+			{
+				filterList.get(i).setType("number");
+			}
+			else
+			{
+				filterList.get(i).setType("text");
+			}
+			
+		}
+	}
+	
+	
+	@Transactional
 	public JSONObject getTableDataByFilter(List<Integer>columnIdList,List<FilterType>filterList)
 	{
-		String columnArrayStr = convertToColumnArrayStr(columnIdList);
-		String sql = "SELECT a.row_id,b.column_id,a.data_value FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") and row_id in (select distinct(row_id) from tbl_prod_data where"; 
+		setFilterType(filterList);
 		
+		String columnArrayStr = convertToColumnArrayStr(columnIdList);
+		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") and row_id in"; 
+		String rowIdSpace = "";
 		if(filterList.size()>0)
 		{
 			if(filterList.get(0).getType().equals("text"))
 			{
-				sql = sql + " column_id="+filterList.get(0).getColumnId()+" and data_value_ignore like '%"+filterList.get(0).getValue()+"%'";
+				rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(0).getField()+" and data_value like '%"+filterList.get(0).getValue()+"%')";
 			}
 			else if(filterList.get(0).getType().equals("number"))
 			{
-				if(filterList.get(0).getOperation().equals("equal"))
+				if(filterList.get(0).getOp().equals("equal"))
 				{
-					sql = sql + " column_id="+filterList.get(0).getColumnId()+" and data_value_ignore = '"+filterList.get(0).getValue()+"'";
+					rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(0).getField()+" and data_value= '"+filterList.get(0).getValue()+"')";
+				    
 				}
-				else if(filterList.get(0).getOperation().equals("smaller"))
+				else if(filterList.get(0).getOp().equals("less"))
 				{
-					sql = sql + " column_id="+filterList.get(0).getColumnId()+" and data_value_ignore < '"+filterList.get(0).getValue()+"'";
+					rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(0).getField()+" and data_value< '"+filterList.get(0).getValue()+"')";
 				}
-				else if(filterList.get(0).getOperation().equals("larger"))
+				else if(filterList.get(0).getOp().equals("greater"))
 				{
-					sql = sql + " column_id="+filterList.get(0).getColumnId()+" and data_value_ignore > '"+filterList.get(0).getValue()+"'";
+					rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(0).getField()+" and data_value> '"+filterList.get(0).getValue()+"')";
 				}
 			}
 			
@@ -235,26 +292,26 @@ public class TableDaoImpl{
 		{
 			if(filterList.get(i).getType().equals("text"))
 			{
-				sql = sql + " and column_id="+filterList.get(i).getColumnId()+" and data_value_ignore like '%"+filterList.get(0).getValue()+"%'";
+				rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(i).getField()+" and data_value like '%"+filterList.get(i).getValue()+"%' and row_id in "+rowIdSpace+")";
 			}
 			else if(filterList.get(i).getType().equals("number"))
 			{
-				if(filterList.get(i).getOperation().equals("equal"))
+				if(filterList.get(i).getOp().equals("equal"))
 				{
-					sql = sql + " and column_id="+filterList.get(i).getColumnId()+" and data_value_ignore = '"+filterList.get(0).getValue()+"'";
+					rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(i).getField()+" and data_value= '"+filterList.get(i).getValue()+"' and row_id in "+rowIdSpace+")";
 				}
-				else if(filterList.get(i).getOperation().equals("smaller"))
+				else if(filterList.get(i).getOp().equals("less"))
 				{
-					sql = sql + " and column_id="+filterList.get(i).getColumnId()+" and data_value_ignore < '"+filterList.get(0).getValue()+"'";
+					rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(i).getField()+" and data_value< '"+filterList.get(i).getValue()+"' and row_id in "+rowIdSpace+")";
 				}
-				else if(filterList.get(i).getOperation().equals("larger"))
+				else if(filterList.get(i).getOp().equals("greater"))
 				{
-					sql = sql + " and column_id="+filterList.get(i).getColumnId()+" and data_value_ignore > '"+filterList.get(0).getValue()+"'";
+					rowIdSpace = "(select row_id from tbl_prod_data where column_id="+filterList.get(i).getField()+" and data_value> '"+filterList.get(i).getValue()+"' and row_id in "+rowIdSpace+")";
 				}
 			}
 			
 		}
-		sql = sql+" ) order by a.row_id,b.column_id";
+		sql =  sql+rowIdSpace+" order by a.row_id,b.column_id";
 		System.out.println(sql);
 		return getTableData(sql);
 	}

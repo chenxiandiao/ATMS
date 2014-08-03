@@ -2,27 +2,21 @@ package model;
 
 public class FilterType {
 
-	private int columnId;
-	private String type;
-	private String operation;
+	private int field;
+	private String op;
 	private String value;
-	public int getColumnId() {
-		return columnId;
+	private String type;
+	public int getField() {
+		return field;
 	}
-	public void setColumnId(int columnId) {
-		this.columnId = columnId;
+	public void setField(int field) {
+		this.field = field;
 	}
-	public String getType() {
-		return type;
+	public String getOp() {
+		return op;
 	}
-	public void setType(String type) {
-		this.type = type;
-	}
-	public String getOperation() {
-		return operation;
-	}
-	public void setOperation(String operation) {
-		this.operation = operation;
+	public void setOp(String op) {
+		this.op = op;
 	}
 	public String getValue() {
 		return value;
@@ -30,6 +24,13 @@ public class FilterType {
 	public void setValue(String value) {
 		this.value = value;
 	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	
 	
 	
 }
