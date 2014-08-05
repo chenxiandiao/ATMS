@@ -4,6 +4,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import model.TableData;
 
@@ -170,5 +172,78 @@ public class Expression {
 		return result_value;
 	}
 	
+	public static boolean formulaValidation(String formulaStr)
+	{
+		String postfix = toPostfix(formulaStr);
+		for(int i = 0;i<tokenList.size();i++)
+		{
+			Pattern pattern1 = Pattern.compile("C[1-9]{1,2}");
+			Pattern pattern2 = Pattern.compile("^\\d+(.\\d+)?$"); 
+			Matcher matcher1 = pattern1.matcher(tokenList.get(i));
+			Matcher matcher2 = pattern2.matcher(tokenList.get(i));
+			
+			if(matcher1.matches()||matcher2.matches())
+			{
+				
+			}
+			else
+			{
+				return false;
+			}
+		}
+		
+		String formula = "";
+		formula = postfix.replaceAll("C", "");
+		try{
+			double result = value(formula);
+			System.out.println(result);
+		}catch(Exception e){
+			System.out.println("输入公式不合法");
+			return false;
+		}finally{
+		}
+		return true;
+		
+	}
+	
+	
+	public static double value(String postfix)
+	{
+		try
+		{
+			chStack = new Stack<String>();
+			String[]token = postfix.split(" ");
+			int i = 0;
+			double result = 0;
+			int len = token.length;
+			while(i<len)
+			{
+				String ch = token[i];
+				if(ch!="+"&&ch!="-"&&ch!="*"&&ch!="/")
+				{
+					chStack.push(ch);
+					i++;
+				}
+				else
+				{
+					double y = Double.parseDouble(chStack.pop());
+					double x = Double.parseDouble(chStack.pop());
+					switch(ch)
+					{
+						case "+":result = x + y; break;
+						case "-":result = x - y; break;
+						case "*":result = x * y; break;
+						case "/":result = x / y; break;
+					}
+					chStack.push(String.valueOf(result));
+					i++;
+				}
+			}
+		}catch(Exception e)
+		{
+			System.out.println("error");
+		}
+		return Double.parseDouble(chStack.pop());
+	}
 	
 }

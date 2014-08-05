@@ -25,13 +25,14 @@ public class ColumnHeader{
 	}*/
 	
 	public void initData(String field, String title, int rowspan,
-			int colspan, boolean sortable,boolean showTag) {
+			int colspan, boolean sortable,boolean showTag,String type) {
 		this.field = field;
 		this.title = title;
 		this.rowspan = rowspan;
 		this.colspan = colspan;
 		this.sortable = sortable;
 		this.showTag = showTag;
+		this.type = type;
 	}
 	
 	public String getField() {

@@ -16,6 +16,8 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import util.Expression;
+
 @Repository
 public class TableDaoImpl{
 	@PersistenceContext
@@ -26,7 +28,7 @@ public class TableDaoImpl{
 	{
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
 		
-		String sql = "select a.column_id,a.column_name,a.column_group,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column group by column_group) b on a.column_id=b.column_id where a.column_id in ("+columnArrayStr+")";
+		String sql = "select a.column_id,a.column_name,a.column_group,a.data_type,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column group by column_group) b on a.column_id=b.column_id where a.column_id in ("+columnArrayStr+")";
 //		String sql = "select a.column_id,a.column_name,a.column_group,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column group by column_group) b on a.column_id=b.column_id where a.column_id like '%'";
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
@@ -40,28 +42,58 @@ public class TableDaoImpl{
 			{
 				String field =  obj[0].toString();
 				ColumnHeader columnHeader = new ColumnHeader();
-				columnHeader.initData(field,(String) obj[1],2,1,true,true);
+				if(obj[3].equals("number")||obj[3].equals("money"))
+				{
+					columnHeader.initData(field,(String) obj[1],2,1,true,true,"number");
+				}
+				else
+				{
+					columnHeader.initData(field,(String) obj[1],2,1,true,true,"text");
+				}
+				
 				firstColumnList.add(columnHeader);
 				
 			}
 			else
 			{
 				
-				if(obj[3]!=null&&obj[3]!="")
+				if(obj[4]!=null&&obj[4]!="")
 				{
 					String field = obj[0].toString();
 					ColumnHeader fcolumnHeader = new ColumnHeader();
-					fcolumnHeader.initData(null,(String) obj[2],1, 6,true,true);
+					if(obj[3].equals("number")||obj[3].equals("money"))
+					{
+						fcolumnHeader.initData(null,(String) obj[2],1,6,true,true,"number");
+					}
+					else
+					{
+						fcolumnHeader.initData(null,(String) obj[2],1,6,true,true,"text");
+					}
+					
 					firstColumnList.add(fcolumnHeader);
 					ColumnHeader scolumnHeader = new ColumnHeader();
-					scolumnHeader.initData(field,(String)obj[1],1,1,true,true);
+					if(obj[3].equals("number")||obj[3].equals("money"))
+					{
+						scolumnHeader.initData(field,(String) obj[1],1,1,true,true,"number");
+					}
+					else
+					{
+						scolumnHeader.initData(field,(String) obj[1],1,1,true,true,"text");
+					}
 					secondColumnList.add(scolumnHeader);
 				}
 				else
 				{
 					String field = obj[0].toString();
 					ColumnHeader columnHeader = new ColumnHeader();
-					columnHeader.initData(field,(String)obj[1],1,1,true,true);
+					if(obj[3].equals("number")||obj[3].equals("money"))
+					{
+						columnHeader.initData(field,(String) obj[1],1,1,true,true,"number");
+					}
+					else
+					{
+						columnHeader.initData(field,(String) obj[1],1,1,true,true,"text");
+					}
 					secondColumnList.add(columnHeader);
 				}
 			}
@@ -81,6 +113,7 @@ public class TableDaoImpl{
 		System.out.println(sql);
 		return getTableData(sql);
 	}
+	
 	private JSONObject getTableData(String sql)
 	{	
 		Query query = em.createNativeQuery(sql);
@@ -110,7 +143,9 @@ public class TableDaoImpl{
 					{
 						if(tableDataList.get(j).getFormula_type()==1)
 						{
-							
+							String formulaValue = Expression.formulaValue(tableDataList, tableDataList.get(j).getValue());
+							row.put(tableDataList.get(j).getField(), formulaValue);
+							//替换
 						}
 					}
 					
@@ -146,6 +181,21 @@ public class TableDaoImpl{
 				}
 			}
 			
+		}
+		//最后一组数据
+		if(row!=null)
+		{
+			for(int j=0;j<tableDataList.size();j++)
+			{
+				if(tableDataList.get(j).getFormula_type()==1)
+				{
+					String formulaValue = Expression.formulaValue(tableDataList, tableDataList.get(j).getValue());
+					row.put(tableDataList.get(j).getField(), formulaValue);
+					//替换
+				}
+			}
+			rowsList.put(row);
+			rowCnt++;
 		}
 		tableDataJsonObject.put("rows", rowsList);
 		tableDataJsonObject.put("count", rowCnt);
@@ -316,5 +366,12 @@ public class TableDaoImpl{
 		return getTableData(sql);
 	}
 	
+	@Transactional
+	public void insertColumn(String field,String columnName)
+	{
+		String sql = "update tbl_prod_column  set column_serial= column_serial+1 where column_serial>(select a.column_serial from (SELECT column_serial FROM breaker.tbl_prod_column where column_id="+field+")a)";
+		
+	
+	}
 	
 }

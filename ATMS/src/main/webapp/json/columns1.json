@@ -1,0 +1,42 @@
+﻿[[{
+	"field": "itemid",
+	"title": "Item ID",
+	"rowspan": "2",
+	"type": "text"
+},
+{
+	"field": "productid",
+	"title": "Product ID",
+	"rowspan": "2",
+	"type": "text"
+},
+{
+	"field": "productname",
+	"title": "Product Name",
+	"rowspan": "2",
+	"type": "text"
+},
+{
+	"title": "Item Details",
+	"colspan": "4"
+}],
+[{
+	"field": "listprice",
+	"title": "List Price",
+	"type": "number"
+},
+{
+	"field": "unitcost",
+	"title": "Unit Cost",
+	"type": "number"
+},
+{
+	"field": "attr1",
+	"title": "Attribute",
+	"type": "text"
+},
+{
+	"field": "status",
+	"title": "Status",
+	"type": "text"
+}]]
