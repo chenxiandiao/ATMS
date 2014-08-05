@@ -294,7 +294,7 @@
 			pageSize : 20,
 			pageList : [10, 20, 30, 40, 50],
 			pagePosition : 'bottom',
-			url : '../json/data1.json',
+			url : '/ATMS/TableController/showTableColumn',
 
 			remoteFilter : true,
 			onBeforeLoad : function (param) {
