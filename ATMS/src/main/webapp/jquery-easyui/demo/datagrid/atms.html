@@ -8,6 +8,7 @@
 	<link rel="stylesheet" type="text/css" href="../demo.css">
 	<script type="text/javascript" src="../../jquery.min.js"></script>
 	<script type="text/javascript" src="../../jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../uploadify/jquery.uploadify.js" /></script>
 	<script type="text/javascript">
 	
 	function columnHeader(){
@@ -131,8 +132,31 @@
 			})
 		});
 	}
+	function uploadBtnInit(){
+		$("#uploadify").uploadify({
+				'buttonText':'excel导入站点',
+				 buttonClass:'excelbtn',
+				 width:120,
+				 height:26,
+				 rollover:false,
+				 swf: '/ATMS/uploadify/uploadify.swf',
+				 uploader: '/ATMS/TableController/importExcel',
+				 cancelImg: '/ATMS/uploadify/uploadify_cancel.png',
+				 folder: 'UploadFile',
+				 auto: true,
+				 'onSelect' : function(file) {
+	          	  this.addPostParam("file_name",encodeURI(file.name));//改变文件名的编码
+	       },
+	       	onUploadSuccess:function(file, data, response){
+	       	 
+	      	  var re_data=eval("("+data+")");
+	          alert(re_data);
+	   });
+	}
+	 
 	$(document).ready(function(){
 		//test();
+		uploadBtnInit();
 		showTable();
 		// searchBtnClick();
 		//getFilter();
@@ -144,6 +168,10 @@
 	<div>
 		<input id="searchKey" type="text"/>
 		<input id="searchbtn" type="button" value="查询"/>
+		<div  style="margin-left:20px;;margin-top:10px;float:left">
+			<input type="file" name="uploadify" id="uploadify" value="从excel导入" />		
+		</div>
+		
 	</div>
 	<table id="dg"></table>
 </body>

@@ -8,6 +8,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import model.ColumnHeader;
+import model.ExcelImportTabelCell;
 import model.FilterType;
 import model.TableData;
 
@@ -23,12 +24,14 @@ public class TableDaoImpl{
 	@PersistenceContext
 	private EntityManager em;
 	private String defaultColumnArrayStr = "51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69";
+	
 	@Transactional
 	public List<List<ColumnHeader>> showTableHeader(List<Integer>columnIdList)
 	{
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
 		
-		String sql = "select a.column_id,a.column_name,a.column_group,a.data_type,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column group by column_group) b on a.column_id=b.column_id where a.column_id in ("+columnArrayStr+")";
+		String sql = "select a.column_id,a.column_name,a.column_group,a.data_type,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column where column_id in ("+columnArrayStr+") group by column_group) b on a.column_id=b.column_id where a.column_id in ("+columnArrayStr+")";
+		System.out.println(sql);
 //		String sql = "select a.column_id,a.column_name,a.column_group,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column group by column_group) b on a.column_id=b.column_id where a.column_id like '%'";
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
@@ -219,7 +222,7 @@ public class TableDaoImpl{
 	
 	@Transactional
 	public List<Integer>getColumnIdList(String username){
-		String sql = "SELECT column_serial FROM tbl_user_column t where user_name='"+username+"'";
+		String sql = "SELECT column_id FROM tbl_user_column t where user_name='"+username+"' and showflag=1";
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
 		List<Integer>columnIdList = new ArrayList<Integer>();
@@ -268,9 +271,12 @@ public class TableDaoImpl{
 	
 	
 	@Transactional
-	public void setFormula(int columnId,int categoryId,String formula){
-		String sql = "update tbl_formula set formula='"+formula+"' where column_id="+columnId+" and category_id="+categoryId;
-		System.out.println(sql);
+	public void setFormula(int columnId,String categoryName,String formula){
+//		String sql = "update tbl_formula set formula='"+formula+"' where column_id="+columnId+" and category_id="+categoryId;
+//		System.out.println(sql);
+//		Query query = em.createNativeQuery(sql);
+//		query.executeUpdate();
+		String sql = "update tbl_prod_data set data_value="+formula+" where column_id="+columnId+" and row_id in(select a.row_id from (select row_id from tbl_prod_data where data_value="+categoryName+")a)";
 		Query query = em.createNativeQuery(sql);
 		query.executeUpdate();
 	}
@@ -366,12 +372,63 @@ public class TableDaoImpl{
 		return getTableData(sql);
 	}
 	
+	//动态添加列待实现
 	@Transactional
 	public void insertColumn(String field,String columnName)
 	{
 		String sql = "update tbl_prod_column  set column_serial= column_serial+1 where column_serial>(select a.column_serial from (SELECT column_serial FROM breaker.tbl_prod_column where column_id="+field+")a)";
+		Query query = em.createNativeQuery(sql);
+		query.executeUpdate();
 		
+		String selectSql = "SELECT column_serial FROM breaker.tbl_prod_column where column_id="+field;
+		Query selectQuery = em.createNativeQuery(selectSql);
+		List<Integer>column_serialList =  selectQuery.getResultList();
+		int column_serail = column_serialList.get(0) + 1;
+//		String insertSql = "insert into tbl_prod_column(column_name,column_group,)" 
+	}
+
+	@Transactional
+	public void insertCell(List<ExcelImportTabelCell> cellList) {
+		if(cellList.size()!=0)
+		{
+			String sql = "insert tbl_prod_data(row_id,column_id,data_value,formula_type,data_value_ignore) values";
+			for(int i = 0;i<cellList.size();i++)
+			{
+				sql = sql + "("+cellList.get(i).getRow_id()+","+cellList.get(i).getColumn_id()+",'"+cellList.get(i).getData_value()+"',0,"+"'"+cellList.get(i).getData_value_ignore()+"'),";
+			}
+			sql = sql.substring(0,sql.length()-1);
+			System.out.println(sql);
+			Query query = em.createNativeQuery(sql);
+			query.executeUpdate();
+		}
+		
+		
+	}
+
+	@Transactional
+	public int getMaxRowId() {
+		String sql = "select Max(row_id) as row_id from tbl_prod_data";
+		Query query = em.createNativeQuery(sql);
+		List list = query.getResultList();
+		return (Integer) list.get(0);
+	}
 	
+	@Transactional
+	public void setShowColumn(String username, List<Integer> columnIdList) {
+		String sql = "update tbl_user_column set showflag=0 where user_name='"+username+"'";
+		if(columnIdList.size()>0)
+		{
+			sql = sql + " and (";
+		}
+		for(int i = 0;i<columnIdList.size();i++)
+		{
+			sql = sql +" column_id=" + columnIdList.get(i) + " or";
+		}
+		sql = sql.substring(0, sql.length()-2);
+		sql = sql + ")";
+		System.out.println(sql);
+		Query query = em.createNativeQuery(sql);
+		query.executeUpdate();
 	}
 	
 }
