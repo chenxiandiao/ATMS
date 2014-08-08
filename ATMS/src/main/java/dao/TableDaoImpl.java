@@ -23,6 +23,8 @@ import util.Expression;
 public class TableDaoImpl{
 	@PersistenceContext
 	private EntityManager em;
+	private int defaultColumnBegin = 51;
+	private int defaultColumnEnd = 69;
 	private String defaultColumnArrayStr = "51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69";
 	
 	@Transactional
@@ -66,11 +68,11 @@ public class TableDaoImpl{
 					ColumnHeader fcolumnHeader = new ColumnHeader();
 					if(obj[3].equals("number")||obj[3].equals("money"))
 					{
-						fcolumnHeader.initData(null,(String) obj[2],1,6,true,true,"number");
+						fcolumnHeader.initData(null,(String) obj[2],1,Integer.parseInt(String.valueOf(obj[4])),true,true,"number");
 					}
 					else
 					{
-						fcolumnHeader.initData(null,(String) obj[2],1,6,true,true,"text");
+						fcolumnHeader.initData(null,(String) obj[2],1,Integer.parseInt(String.valueOf(obj[4])),true,true,"text");
 					}
 					
 					firstColumnList.add(fcolumnHeader);
@@ -114,11 +116,11 @@ public class TableDaoImpl{
 		//String sql = "SELECT a.row_id,b.column_id,a.data_value FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id like '%' order by a.row_id,b.column_id ";
 		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") order by a.row_id,b.column_id ";
 		System.out.println(sql);
-		return getTableData(sql);
+		return getTableData(sql,null);
 	}
 	
-	private JSONObject getTableData(String sql)
-	{	
+	private JSONObject getTableData(String sql,String searchKey)
+	{
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
 		JSONObject tableDataJsonObject = new JSONObject();
@@ -134,6 +136,10 @@ public class TableDaoImpl{
 		for(int i = 0;i<list.size();i++)
 		{
 			Object[]obj = (Object[])list.get(i);
+			if(obj[0]==null)
+			{
+				continue;
+			}
 			row_id = (Integer) obj[0];
 			field = obj[1].toString();
 			value = obj[2].toString();
@@ -149,6 +155,40 @@ public class TableDaoImpl{
 							String formulaValue = Expression.formulaValue(tableDataList, tableDataList.get(j).getValue());
 							row.put(tableDataList.get(j).getField(), formulaValue);
 							//替换
+						}
+					}
+			
+					if(searchKey!=null)
+					{
+						String[]searchArray = searchKey.split(",");
+						List<String> showSearchKeyList = new ArrayList<String>();
+						boolean flag = false;
+						for(int j=0;j<tableDataList.size();j++)
+						{
+							int column_id = Integer.parseInt(tableDataList.get(j).getField());
+							if(column_id>=this.defaultColumnBegin&&column_id<=this.defaultColumnEnd)
+							{
+								for(int k=0;k<searchArray.length;k++)
+								{
+									if(tableDataList.get(j).getValue().indexOf(searchArray[k])!=-1)
+									{
+										if(!showSearchKeyList.contains(searchArray[k]))
+										{
+											showSearchKeyList.add(searchArray[k]);
+										}
+										flag = true;
+									}
+								}
+							}
+						}
+						if(flag)
+						{
+							String showSearchKey = "";
+							for(int t = 0;t<showSearchKeyList.size();t++)
+							{
+								showSearchKey = showSearchKey + showSearchKeyList.get(t) +" ";
+							}
+							row.put("0", showSearchKey);
 						}
 					}
 					
@@ -181,6 +221,11 @@ public class TableDaoImpl{
 				if(row!=null)
 				{
 					row.put(field, value);
+					TableData  tableData = new TableData();
+					tableData.setField(field);
+					tableData.setValue(value);
+					tableData.setFormula_type(formula_type);
+					tableDataList.add(tableData);
 				}
 			}
 			
@@ -197,6 +242,41 @@ public class TableDaoImpl{
 					//替换
 				}
 			}
+			
+			if(searchKey!=null)
+			{
+				String[]searchArray = searchKey.split(",");
+				List<String> showSearchKeyList = new ArrayList<String>();
+				boolean flag = false;
+				for(int j=0;j<tableDataList.size();j++)
+				{
+					int column_id = Integer.parseInt(tableDataList.get(j).getField());
+					if(column_id>=this.defaultColumnBegin&&column_id<=this.defaultColumnEnd)
+					{
+						for(int k=0;k<searchArray.length;k++)
+						{
+							if(tableDataList.get(j).getValue().indexOf(searchArray[k])!=-1)
+							{
+								if(!showSearchKeyList.contains(searchArray[k]))
+								{
+									showSearchKeyList.add(searchArray[k]);
+								}
+								flag = true;
+							}
+						}
+					}
+				}
+				if(flag)
+				{
+					String showSearchKey = "";
+					for(int t = 0;t<showSearchKeyList.size();t++)
+					{
+						showSearchKey = showSearchKey + showSearchKeyList.get(t) +" ";
+					}
+					row.put("0", showSearchKey);
+				}
+			}
+			
 			rowsList.put(row);
 			rowCnt++;
 		}
@@ -204,6 +284,8 @@ public class TableDaoImpl{
 		tableDataJsonObject.put("count", rowCnt);
 		return tableDataJsonObject;
 	}
+	
+	
 	@Transactional
 	public boolean login(String username,String password)
 	{
@@ -254,8 +336,23 @@ public class TableDaoImpl{
 	@Transactional
 	public JSONObject getTableDataByNumber(List<Integer>columnIdList,String searchKey){
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
-		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") and row_id in (select distinct(row_id) from tbl_prod_data where column_id in("+defaultColumnArrayStr+") and data_value_ignore like '%"+searchKey+"%') order by a.row_id,b.column_id";
-		return getTableData(sql);
+		String converToSearchKeyStr = converToSearchKeyStr(searchKey);
+		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") and row_id in (select distinct(row_id) from tbl_prod_data where column_id in("+defaultColumnArrayStr+") and data_value_ignore Rlike '"+converToSearchKeyStr+"') order by a.row_id,b.column_id";
+		System.out.println(sql);
+		return getTableData(sql,searchKey);
+	}
+	
+	private String converToSearchKeyStr(String searchKey)
+	{
+		String searchKeyStr = "";
+		String[] searchArray = searchKey.split(",");
+		for(int i= 0;i<searchArray.length;i++)
+		{
+			searchKeyStr = searchKeyStr + searchArray[i] + "|";
+		}
+		if(searchKeyStr!="")
+			searchKeyStr = searchKeyStr.substring(0, searchKeyStr.length()-1);
+		return searchKeyStr;
 	}
 	
 	private String convertToColumnArrayStr(List<Integer>columnIdList){
@@ -369,7 +466,7 @@ public class TableDaoImpl{
 		}
 		sql =  sql+rowIdSpace+" order by a.row_id,b.column_id";
 		System.out.println(sql);
-		return getTableData(sql);
+		return getTableData(sql,null);
 	}
 	
 	//动态添加列待实现
@@ -410,7 +507,16 @@ public class TableDaoImpl{
 		String sql = "select Max(row_id) as row_id from tbl_prod_data";
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
-		return (Integer) list.get(0);
+		System.out.println("maxRowId:"+list.size());
+		if(list.get(0)==null)
+		{
+			return 0;
+		}
+		else
+		{
+			return (Integer) list.get(0);
+		}
+		
 	}
 	
 	@Transactional

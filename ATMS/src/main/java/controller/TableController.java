@@ -207,7 +207,7 @@ public class TableController {
 			    	
 			        ExcelImportTabelCell cell = new ExcelImportTabelCell();
 					cell.setRow_id(maxRowId+i-1);
-					cell.setColumn_id(j);
+					cell.setColumn_id(j+1);
 					cell.setData_value(value);
 					cell.setFormula_type(0);
 					cell.setData_value_ignore(value.replace("/[^a-zA-Z0-9]/", ""));
