@@ -71,7 +71,7 @@ public class WebAppContext extends WebMvcConfigurerAdapter{
 //        return exceptionResolver;
 //    }
 
-  /*  @Bean
+    @Bean
     public ViewResolver viewResolver() {
         InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
 
@@ -80,7 +80,7 @@ public class WebAppContext extends WebMvcConfigurerAdapter{
         viewResolver.setSuffix(VIEW_RESOLVER_SUFFIX);
 
         return viewResolver;
-    }*/
+    }
     
     @Bean
     public MultipartResolver multipartResolver() {

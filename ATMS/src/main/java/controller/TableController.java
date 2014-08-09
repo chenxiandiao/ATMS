@@ -26,6 +26,7 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -58,7 +59,8 @@ public class TableController {
 		{
 			columnIdList = tableDaoImpl.getColumnIdList(username);
 			this.username = username;
-			return "/html/atms.html";
+//			return "/html/atms.html";
+			return "hello";
 		}
 		else
 		{
@@ -67,12 +69,21 @@ public class TableController {
 	}
 	@RequestMapping(value="/showTableColumn")
 	@ResponseBody
+	public String showTableColumn(){
+		System.out.println("showTableColumn");
+		JSONArray data = new JSONArray();
+		data = tableDaoImpl.showTableHeader(columnIdList);
+		return data.toString();
+	}
+	
+	/*@RequestMapping(value="/showTableColumn")
+	@ResponseBody
 	public List<List<ColumnHeader>> showTableColumn(){
 		System.out.println("showTableColumn");
 		List<List<ColumnHeader>> data = new ArrayList<List<ColumnHeader>>();
 		data = tableDaoImpl.showTableHeader(columnIdList);
 		return data;
-	}
+	}*/
 	
 	@RequestMapping(value="/showTableData")
 	@ResponseBody

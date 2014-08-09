@@ -28,13 +28,81 @@ public class TableDaoImpl{
 	private String defaultColumnArrayStr = "51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69";
 	
 	@Transactional
+	public JSONArray showTableHeader(List<Integer>columnIdList)
+	{
+		JSONArray tableHeaderArray = new JSONArray();
+		String columnArrayStr = convertToColumnArrayStr(columnIdList);
+		
+		String sql = "select a.column_id,a.column_name,a.column_group,a.data_type,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column where column_id in ("+columnArrayStr+") group by column_group) b on a.column_id=b.column_id where a.column_id in ("+columnArrayStr+")";
+		System.out.println(sql);
+		Query query = em.createNativeQuery(sql);
+		List list = query.getResultList();
+		String column_group = null;
+		JSONObject secondParentObject = null;
+		JSONArray childrenArray = null;
+		
+		for(int i = 0;i<list.size();i++)
+		{
+			Object[]obj = (Object[])list.get(i);
+			if(obj[2]==null||obj[2]=="")
+			{
+				JSONObject firstHeaderObject = new JSONObject();
+				firstHeaderObject.put("id",  obj[0].toString());
+				firstHeaderObject.put("name",  obj[1].toString());
+				if(obj[3].equals("number")||obj[3].equals("money"))
+				{
+					firstHeaderObject.put("type", "number");
+					
+				}
+				else
+				{
+					firstHeaderObject.put("type", "text");
+				}
+				tableHeaderArray.put(firstHeaderObject);
+			}
+			else
+			{
+				if(obj[2]!=column_group)
+				{
+					if(secondParentObject!=null&&childrenArray!=null)
+					{
+						secondParentObject.put("children",childrenArray);
+						tableHeaderArray.put(secondParentObject);
+					}
+					secondParentObject = new JSONObject();
+					childrenArray = new JSONArray();
+					secondParentObject.put("name",  (String) obj[1]);
+					column_group = (String) obj[2];
+				}
+				else
+				{
+					JSONObject childrenObject = new JSONObject();
+					childrenObject.put("id",obj[0].toString());
+					childrenObject.put("name", obj[1].toString());
+					if(obj[3].equals("number")||obj[3].equals("money"))
+					{
+						childrenObject.put("type", "number");
+					}
+					else
+					{
+						childrenObject.put("type", "text");
+					}
+					childrenArray.put(childrenObject);
+				}
+				
+			}	
+		}
+		return tableHeaderArray;
+	}
+				
+	
+	/*@Transactional
 	public List<List<ColumnHeader>> showTableHeader(List<Integer>columnIdList)
 	{
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
 		
 		String sql = "select a.column_id,a.column_name,a.column_group,a.data_type,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column where column_id in ("+columnArrayStr+") group by column_group) b on a.column_id=b.column_id where a.column_id in ("+columnArrayStr+")";
 		System.out.println(sql);
-//		String sql = "select a.column_id,a.column_name,a.column_group,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column group by column_group) b on a.column_id=b.column_id where a.column_id like '%'";
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
 		List<List<ColumnHeader>> data = new ArrayList<List<ColumnHeader>>();
@@ -106,7 +174,10 @@ public class TableDaoImpl{
 		data.add(firstColumnList);
 		data.add(secondColumnList);
 		return data;
-	}
+	}*/
+	
+	
+	
 	
 	@Transactional
 	public JSONObject showTableData(List<Integer>columnIdList)
