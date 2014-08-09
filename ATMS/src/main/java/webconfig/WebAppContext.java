@@ -76,8 +76,8 @@ public class WebAppContext extends WebMvcConfigurerAdapter{
         InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
 
         viewResolver.setViewClass(JstlView.class);
-        viewResolver.setPrefix(VIEW_RESOLVER_PREFIX);
-        viewResolver.setSuffix(VIEW_RESOLVER_SUFFIX);
+       // viewResolver.setPrefix(VIEW_RESOLVER_PREFIX);
+       // viewResolver.setSuffix(VIEW_RESOLVER_SUFFIX);
 
         return viewResolver;
     }

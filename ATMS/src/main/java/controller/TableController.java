@@ -48,31 +48,31 @@ public class TableController {
 	
 	@Autowired
 	private TableDaoImpl tableDaoImpl;
+	
 	private List<Integer> columnIdList;
 	private String username;
 	
 	private String savePath = "E:\\3.xls";
 	
 	@RequestMapping(value="login")
-	private String login(String username,String password){
+	private String login(String username,String password,HttpServletRequest request){
 		if(tableDaoImpl.login(username, password))
 		{
-			columnIdList = tableDaoImpl.getColumnIdList(username);
 			this.username = username;
-//			return "/html/atms.html";
-			return "hello";
+			return "/html/atms.html";
 		}
 		else
 		{
 			return "error";
 		}
+//		return  "/html/atms.html";
 	}
 	@RequestMapping(value="/showTableColumn")
 	@ResponseBody
 	public String showTableColumn(){
 		System.out.println("showTableColumn");
 		JSONArray data = new JSONArray();
-		data = tableDaoImpl.showTableHeader(columnIdList);
+		data = tableDaoImpl.showTableHeader(this.username);
 		return data.toString();
 	}
 	
@@ -97,7 +97,6 @@ public class TableController {
 	@RequestMapping(value="/setShowColumn")
 	@ResponseBody
 	public String setShowColumn(@RequestBody List<ColumnHeader> columnHeaderList){
-//		System.out.println(columnHeaderList);
 		System.out.println(columnHeaderList.size());
 		
 		List<Integer> hideColumnIdList = new ArrayList<Integer>();
@@ -108,7 +107,6 @@ public class TableController {
 		
 		tableDaoImpl.setShowColumn(username,hideColumnIdList);
 		//重新获得显示列
-		columnIdList = tableDaoImpl.getColumnIdList(username);
 		System.out.println(columnIdList.size());
 		JSONObject data = new JSONObject();
 		data.put("msg", "success");

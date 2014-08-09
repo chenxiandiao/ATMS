@@ -28,12 +28,10 @@ public class TableDaoImpl{
 	private String defaultColumnArrayStr = "51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69";
 	
 	@Transactional
-	public JSONArray showTableHeader(List<Integer>columnIdList)
+	public JSONArray showTableHeader(String username)
 	{
 		JSONArray tableHeaderArray = new JSONArray();
-		String columnArrayStr = convertToColumnArrayStr(columnIdList);
-		
-		String sql = "select a.column_id,a.column_name,a.column_group,a.data_type,b.cnt from tbl_prod_column a left join (select column_id,count(*) as cnt from tbl_prod_column where column_id in ("+columnArrayStr+") group by column_group) b on a.column_id=b.column_id where a.column_id in ("+columnArrayStr+")";
+		String sql = "select b.column_id,b.column_name,b.column_group,b.data_type,a.showflag from tbl_user_column a left join tbl_prod_column b on a.column_id=b.column_id where user_name='"+username+"'";
 		System.out.println(sql);
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
@@ -62,8 +60,9 @@ public class TableDaoImpl{
 			}
 			else
 			{
-				if(obj[2]!=column_group)
+				if(!obj[2].toString().equals(column_group))
 				{
+					System.out.println(obj[2]);
 					if(secondParentObject!=null&&childrenArray!=null)
 					{
 						secondParentObject.put("children",childrenArray);
@@ -71,8 +70,23 @@ public class TableDaoImpl{
 					}
 					secondParentObject = new JSONObject();
 					childrenArray = new JSONArray();
-					secondParentObject.put("name",  (String) obj[1]);
-					column_group = (String) obj[2];
+					secondParentObject.put("name", obj[2].toString());
+					
+					JSONObject childrenObject = new JSONObject();
+					childrenObject.put("id",obj[0].toString());
+					childrenObject.put("name", obj[1].toString());
+					if(obj[3].equals("number")||obj[3].equals("money"))
+					{
+						childrenObject.put("type", "number");
+					}
+					else
+					{
+						childrenObject.put("type", "text");
+					}
+					childrenArray.put(childrenObject);
+					
+					
+					column_group =  obj[2].toString();
 				}
 				else
 				{
@@ -373,9 +387,9 @@ public class TableDaoImpl{
 		}
 	}
 	
-	@Transactional
+	/*@Transactional
 	public List<Integer>getColumnIdList(String username){
-		String sql = "SELECT column_id FROM tbl_user_column t where user_name='"+username+"' and showflag=1";
+		String sql = "SELECT column_id FROM tbl_user_column t where user_name='"+username+"'";
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
 		List<Integer>columnIdList = new ArrayList<Integer>();
@@ -384,7 +398,7 @@ public class TableDaoImpl{
 			columnIdList.add((Integer) list.get(i));
 		}
 		return columnIdList;
-	}
+	}*/
 	
 	@Transactional
 	public List<ColumnHeader>getFilter(){

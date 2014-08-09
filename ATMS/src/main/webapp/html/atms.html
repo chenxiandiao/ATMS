@@ -28,6 +28,18 @@
 		this.value = "";
 	}
 	
+	function getColumnHeader()
+	{
+		$.ajax({
+			url:'/ATMS/TableController/showTableColumn',
+			type:'get',
+			dataType:'json',
+			success:function(data){
+				
+			}
+		});
+	}
+		
 	function showTable()
 	{
 		$.ajax({
@@ -167,6 +179,7 @@
 	$(document).ready(function(){
 		
 		uploadBtnInit();
+		getColumnHeader();
 		/*showTable();
 		setShowColumnBtnClickListener();
 		searchBtnClick();*/
