@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Basic DataGrid - jQuery EasyUI Demo</title>
+	<link rel="stylesheet" href="../uploadify/uploadify.css" type="text/css" />
+	<link rel="stylesheet" type="text/css" href="../jquery-easyui/themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="../jquery-easyui/themes/icon.css">
+	<link rel="stylesheet" type="text/css" href="../jquery-easyui/demo/demo.css">
+	
+	<script type="text/javascript" src="../jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../uploadify/jquery.uploadify.js" /></script>
+	<script type="text/javascript">
+	
+	function columnHeader(){
+		 this.field = "";
+		 this.title = "";
+		 this.rowspan = 1;
+		 this.colspan = 1;
+		 this.sortable = true;
+		 this.showTag = true;
+	}
+	
+	function filterType(){
+		this.field = 1;
+		this.op = "";
+		this.value = "";
+	}
+	
+	function showTable()
+	{
+		$.ajax({
+			url:'/ATMS/TableController/showTableColumn',
+			type:'get',
+			dataType:'json',
+			success:function(data){
+				$('#dg').datagrid({
+				    //columns:'/ATMS/TableController/showTableColumn'
+					columns:data,
+					url:'/ATMS/TableController/showTableData'
+				});
+			}
+		})
+		
+	}
+	
+	function showTableByFilter()
+	{
+		var filterArray = [];
+		var filter = new filterType();
+		filter.field = 2;
+		filter.op="larger";
+		filter.value="266";
+		filterArray.push(filter);
+		var filter2 = new filterType();
+		filter2.field = 7;
+		filter2.op = "larger";
+		filter2.value = "14.0";
+		filterArray.push(filter2);
+		var headerData = JSON.stringify(filterArray);
+		$.ajax({
+			url:'/ATMS/TableController/searchByFilter',
+			dataType:'json',
+			data:headerData,
+			type:'post',
+			contentType:"application/json",
+			success:function(data){
+				alert("hello");
+				//alert(data.rows.length);
+			}
+		})
+	}
+	
+	function setShowColumn(){
+		var columnArray = [];
+		var _columnHeader = new columnHeader();
+		_columnHeader.field = "1";
+		_columnHeader.title = "1";
+		_columnHeader.rowspan = 1;
+		_columnHeader.colspan = 1;
+		_columnHeader.sortable = "true";
+		_columnHeader.showTag = "true";
+		columnArray.push(_columnHeader);
+		
+		var _columnHeader2 = new columnHeader();
+		_columnHeader2.field = "2";
+		_columnHeader2.title = "2";
+		_columnHeader2.rowspan = 2;
+		_columnHeader2.colspan = 2;
+		_columnHeader2.sortable = "true";
+		_columnHeader2.showTag = "true";
+		columnArray.push(_columnHeader2);
+		
+		var data = JSON.stringify(columnArray);
+		$.ajax({
+			url:'/ATMS/TableController/setShowColumn',
+			type:'post',
+			dataType:'json',
+			contentType:"application/json",  
+			data:data,
+			success:function(data){
+				alert(data.msg);
+			}
+		});
+	}
+	
+	function getFilter(){
+		$.ajax({
+			url:'/ATMS/TableController/getFilter',
+			type:'get',
+			dataType:'json',
+			success:function(data){
+				for(var i=0;i<data.length;i++)
+				{
+					alert(data[i].field+" "+data[i].data_type);
+				}
+				
+			}
+		});	
+	}
+	
+	
+	function searchBtnClick(){
+		$("#searchbtn").click(function(){
+			var searchKey = $("#searchKey").val();
+			$.ajax({
+				url:'/ATMS/TableController/searchByNumber',
+				type:'post',
+				dataType:'json',
+				data:{"searchKey":searchKey},
+				success:function(data){
+					alert(data.rows.length);
+				}
+			})
+		});
+	}
+	function uploadBtnInit(){
+			$("#uploadify").uploadify({
+					'buttonText':'导入excel文件',
+					 buttonClass:'excelbtn',
+					 width:120,
+					 height:26,
+					 rollover:false,
+					 swf: '/ATMS/uploadify/uploadify.swf',
+					 uploader: '/ATMS/TableController/importExcel',
+					 cancelImg: '/ATMS/uploadify/uploadify_cancel.png',
+					 folder: 'UploadFile',
+					 auto: true,
+					 'onSelect' : function(file) {
+		          	 	 this.addPostParam("file_name",encodeURI(file.name));//改变文件名的编码
+		      		 },
+		      	      onUploadSuccess:function(file, data, response){
+			      	 	 var re_data=eval("("+data+")");
+			          	 alert(re_data.msg);
+		 	  		}
+		      	});
+			}
+	 
+	function setShowColumnBtnClickListener(){
+		$("#setShowColumn").click(function(){
+			setShowColumn();
+			showTable();
+		});
+		
+	}
+	$(document).ready(function(){
+		
+		uploadBtnInit();
+		showTable();
+		setShowColumnBtnClickListener();
+		searchBtnClick();
+		//getFilter();
+		//showTableByFilter();
+	});
+	</script>
+</head>
+<body>
+	<div  style="margin-left:20px;;margin-top:10px;">
+			<input type="file" name="uploadify" id="uploadify" value="从excel导入" />		
+			<input id="searchKey" type="text"/>
+			<input id="searchbtn" type="button" value="查询"/>
+			<input type="button" id="setShowColumn" value="设置显示列"/>
+	</div>
+	<div>
+		<label>列ID:</label>
+		<input id="field" type="text" style="width:800px"/>
+		<input id="formuulaSet" type="button" value="设置"/>
+	</div>
+	<table id="dg"></table>
+</body>
+</html>
