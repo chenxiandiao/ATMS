@@ -54,13 +54,11 @@ public class TableController {
 	
 	@RequestMapping(value="login")
 	private String login(String username,String password){
-//		System.out.println(cnt++);
-//		return "/WEB-INF/jsp/index.jsp";
 		if(tableDaoImpl.login(username, password))
 		{
 			columnIdList = tableDaoImpl.getColumnIdList(username);
 			this.username = username;
-			return "index";
+			return "/html/atms.html";
 		}
 		else
 		{
