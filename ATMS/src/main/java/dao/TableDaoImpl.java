@@ -387,9 +387,9 @@ public class TableDaoImpl{
 		}
 	}
 	
-	/*@Transactional
+	@Transactional
 	public List<Integer>getColumnIdList(String username){
-		String sql = "SELECT column_id FROM tbl_user_column t where user_name='"+username+"'";
+		String sql = "SELECT column_id FROM tbl_user_column t where user_name='"+username+"' and showflag=1";
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
 		List<Integer>columnIdList = new ArrayList<Integer>();
@@ -398,7 +398,7 @@ public class TableDaoImpl{
 			columnIdList.add((Integer) list.get(i));
 		}
 		return columnIdList;
-	}*/
+	}
 	
 	@Transactional
 	public List<ColumnHeader>getFilter(){

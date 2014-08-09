@@ -58,6 +58,8 @@ public class TableController {
 	private String login(String username,String password,HttpServletRequest request){
 		if(tableDaoImpl.login(username, password))
 		{
+			columnIdList = tableDaoImpl.getColumnIdList(username);
+			System.out.println("用户可查看的列"+columnIdList.size());
 			this.username = username;
 			return "/html/atms.html";
 		}
@@ -107,6 +109,7 @@ public class TableController {
 		
 		tableDaoImpl.setShowColumn(username,hideColumnIdList);
 		//重新获得显示列
+		columnIdList = tableDaoImpl.getColumnIdList(username);
 		System.out.println(columnIdList.size());
 		JSONObject data = new JSONObject();
 		data.put("msg", "success");
