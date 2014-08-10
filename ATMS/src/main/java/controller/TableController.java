@@ -13,15 +13,10 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import jxl.Cell;
-import jxl.Sheet;
-import jxl.Workbook;
-import jxl.read.biff.BiffException;
 import model.ColumnHeader;
 import model.ExcelImportTabelCell;
 import model.FilterType;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -30,13 +25,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -52,7 +43,6 @@ public class TableController {
 	private List<Integer> columnIdList;
 	private String username;
 	
-	private String savePath = "E:\\3.xls";
 	
 	@RequestMapping(value="login")
 	private String login(String username,String password,HttpServletRequest request){
@@ -67,8 +57,8 @@ public class TableController {
 		{
 			return "error";
 		}
-//		return  "/html/atms.html";
 	}
+	
 	@RequestMapping(value="/showTableColumn")
 	@ResponseBody
 	public String showTableColumn(){
@@ -89,12 +79,24 @@ public class TableController {
 	
 	@RequestMapping(value="/showTableData")
 	@ResponseBody
-	public String showTableData(){
+	public String showTableData(int page,int rows){
 		System.out.println("showTableData");
-		JSONObject data = tableDaoImpl.showTableData(columnIdList);
+		JSONObject data = tableDaoImpl.showTableData(columnIdList,page,rows);
 		return data.toString();
 	}
 	
+	
+	@RequestMapping(value="/editRows")
+	@ResponseBody
+	public String editRows(String rowsValue)
+	{
+		System.out.println(rowsValue);
+		JSONArray rowsArray = new JSONArray(rowsValue);
+		tableDaoImpl.editRows(rowsArray);
+		JSONObject data = new JSONObject();
+		data.put("msg", "success");
+		return data.toString();
+	}
 	//传递不显示的列
 	@RequestMapping(value="/setShowColumn")
 	@ResponseBody
@@ -119,34 +121,33 @@ public class TableController {
 	@RequestMapping(value="/getFilter")
 	@ResponseBody
 	public List<ColumnHeader> getFilter(){
-//		JSONObject data = new JSONObject();
 		List<ColumnHeader> data = tableDaoImpl.getFilter();
 		return data;
 	}
 	
 	@RequestMapping(value="/searchByNumber")
 	@ResponseBody
-	public String showTableDataOfSearchByNumber(String searchKey){
-		JSONObject data = tableDaoImpl.getTableDataByNumber(columnIdList, searchKey);
+	public String showTableDataOfSearchByNumber(String searchKey,int page,int rows){
+		JSONObject data = tableDaoImpl.getTableDataByNumber(columnIdList, searchKey,page,rows);
 		return data.toString();
 	}
 	
 	@RequestMapping(value="/setFormula")
 	@ResponseBody
-	public String setFormula(int columnId,String categoryName,String formula)
+	public String setFormula(int columnId,int categoryId,String categoryName,String formula)
 	{
 		JSONObject data = new JSONObject();
-		tableDaoImpl.setFormula(columnId, categoryName, formula);
+		tableDaoImpl.setFormula(columnId,categoryId,categoryName, formula);
 		data.put("msg", "success");
 		return data.toString();
 	}
 	
 	@RequestMapping(value="/searchByFilter")
 	@ResponseBody
-	public String showTableDataOfSearchByFilter(@RequestBody List<FilterType>filterTypeList)
+	public String showTableDataOfSearchByFilter(@RequestBody List<FilterType>filterTypeList,int pageIndex,int pageCount)
 	{
 		System.out.println("searchByFilter");
-		JSONObject data = tableDaoImpl.getTableDataByFilter(columnIdList,filterTypeList);
+		JSONObject data = tableDaoImpl.getTableDataByFilter(columnIdList,filterTypeList,pageIndex,pageCount);
 		return data.toString();
 	}
 	
@@ -238,7 +239,7 @@ public class TableController {
 		         if (cell != null) {
 		             switch (cell.getCellType()) {
 		             case XSSFCell.CELL_TYPE_FORMULA:
-		                 // cell.getCellFormula();
+		                 //cell.getCellFormula();
 		                try {
 		                     value = String.valueOf(cell.getNumericCellValue());
 		                 } catch (IllegalStateException e) {

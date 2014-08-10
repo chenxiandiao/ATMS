@@ -16,6 +16,12 @@
 .icon-cut{
 	background:url('icons/cut.png') no-repeat center center;
 }
+.icon-config{
+	background:url('icons/config.png') no-repeat center center;
+}
+.icon-formula{
+	background:url('icons/formula.png') no-repeat center center;
+}
 .icon-ok{
 	background:url('icons/ok.png') no-repeat center center;
 }

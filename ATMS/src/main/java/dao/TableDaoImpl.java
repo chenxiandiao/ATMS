@@ -1,6 +1,7 @@
 package dao;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -10,6 +11,7 @@ import javax.persistence.Query;
 import model.ColumnHeader;
 import model.ExcelImportTabelCell;
 import model.FilterType;
+import model.FormulaCell;
 import model.TableData;
 
 import org.json.JSONArray;
@@ -45,12 +47,12 @@ public class TableDaoImpl{
 			if(obj[2]==null||obj[2]=="")
 			{
 				JSONObject firstHeaderObject = new JSONObject();
-				firstHeaderObject.put("id",  obj[0].toString());
+				firstHeaderObject.put("id",  "C"+obj[0].toString());
 				firstHeaderObject.put("name",  obj[1].toString());
+				firstHeaderObject.put("display",obj[4].toString().equals("1")?true:false);
 				if(obj[3].equals("number")||obj[3].equals("money"))
 				{
 					firstHeaderObject.put("type", "number");
-					
 				}
 				else
 				{
@@ -73,7 +75,7 @@ public class TableDaoImpl{
 					secondParentObject.put("name", obj[2].toString());
 					
 					JSONObject childrenObject = new JSONObject();
-					childrenObject.put("id",obj[0].toString());
+					childrenObject.put("id","C"+obj[0].toString());
 					childrenObject.put("name", obj[1].toString());
 					if(obj[3].equals("number")||obj[3].equals("money"))
 					{
@@ -83,6 +85,7 @@ public class TableDaoImpl{
 					{
 						childrenObject.put("type", "text");
 					}
+					childrenObject.put("display",obj[4].toString().equals("1")?true:false);
 					childrenArray.put(childrenObject);
 					
 					
@@ -91,7 +94,7 @@ public class TableDaoImpl{
 				else
 				{
 					JSONObject childrenObject = new JSONObject();
-					childrenObject.put("id",obj[0].toString());
+					childrenObject.put("id","C"+obj[0].toString());
 					childrenObject.put("name", obj[1].toString());
 					if(obj[3].equals("number")||obj[3].equals("money"))
 					{
@@ -101,10 +104,17 @@ public class TableDaoImpl{
 					{
 						childrenObject.put("type", "text");
 					}
+					childrenObject.put("display",obj[4].toString().equals("1")?true:false);
 					childrenArray.put(childrenObject);
 				}
 				
 			}	
+		}
+		//最后一个分组
+		if(secondParentObject!=null&&childrenArray!=null)
+		{
+			secondParentObject.put("children",childrenArray);
+			tableHeaderArray.put(secondParentObject);
 		}
 		return tableHeaderArray;
 	}
@@ -194,17 +204,17 @@ public class TableDaoImpl{
 	
 	
 	@Transactional
-	public JSONObject showTableData(List<Integer>columnIdList)
+	public JSONObject showTableData(List<Integer>columnIdList,int page,int rows)
 	{
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
 		
 		//String sql = "SELECT a.row_id,b.column_id,a.data_value FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id like '%' order by a.row_id,b.column_id ";
 		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") order by a.row_id,b.column_id ";
 		System.out.println(sql);
-		return getTableData(sql,null);
+		return getTableData(sql,null,page,rows);
 	}
 	
-	private JSONObject getTableData(String sql,String searchKey)
+	private JSONObject getTableData(String sql,String searchKey,int page,int rows)
 	{
 		Query query = em.createNativeQuery(sql);
 		List list = query.getResultList();
@@ -233,16 +243,6 @@ public class TableDaoImpl{
 			{
 				if(row!=null)
 				{
-					for(int j=0;j<tableDataList.size();j++)
-					{
-						if(tableDataList.get(j).getFormula_type()==1)
-						{
-							String formulaValue = Expression.formulaValue(tableDataList, tableDataList.get(j).getValue());
-							row.put(tableDataList.get(j).getField(), formulaValue);
-							//替换
-						}
-					}
-			
 					if(searchKey!=null)
 					{
 						String[]searchArray = searchKey.split(",");
@@ -273,7 +273,7 @@ public class TableDaoImpl{
 							{
 								showSearchKey = showSearchKey + showSearchKeyList.get(t) +" ";
 							}
-							row.put("0", showSearchKey);
+							row.put("C0", showSearchKey);
 						}
 					}
 					
@@ -286,12 +286,15 @@ public class TableDaoImpl{
 					tableData.setValue(value);
 					tableData.setFormula_type(formula_type);
 					tableDataList.add(tableData);
-					row.put(field, value);
+					row.put("row_id", row_id);
+					row.put("C"+field, value);
+					
 				}
 				else
 				{
 					row = new JSONObject();
-					row.put(field, value);
+					row.put("C"+field, value);
+					row.put("row_id", row_id);
 					TableData  tableData = new TableData();
 					tableData.setField(field);
 					tableData.setValue(value);
@@ -305,7 +308,7 @@ public class TableDaoImpl{
 			{
 				if(row!=null)
 				{
-					row.put(field, value);
+					row.put("C"+field, value);
 					TableData  tableData = new TableData();
 					tableData.setField(field);
 					tableData.setValue(value);
@@ -318,16 +321,6 @@ public class TableDaoImpl{
 		//最后一组数据
 		if(row!=null)
 		{
-			for(int j=0;j<tableDataList.size();j++)
-			{
-				if(tableDataList.get(j).getFormula_type()==1)
-				{
-					String formulaValue = Expression.formulaValue(tableDataList, tableDataList.get(j).getValue());
-					row.put(tableDataList.get(j).getField(), formulaValue);
-					//替换
-				}
-			}
-			
 			if(searchKey!=null)
 			{
 				String[]searchArray = searchKey.split(",");
@@ -358,14 +351,29 @@ public class TableDaoImpl{
 					{
 						showSearchKey = showSearchKey + showSearchKeyList.get(t) +" ";
 					}
-					row.put("0", showSearchKey);
+					row.put("C0", showSearchKey);
 				}
 			}
 			
 			rowsList.put(row);
 			rowCnt++;
 		}
-		tableDataJsonObject.put("rows", rowsList);
+		if(page==0&&page==0)
+		{
+			tableDataJsonObject.put("rows", rowsList);
+		}
+		else
+		{
+			JSONArray pageRowArray = new JSONArray();
+			int count = rowsList.length() - (page-1)*rows;
+			count = (count>rows?rows:count);
+			for(int i = (page-1)*rows;i<(page-1)*rows+count;i++)
+			{
+				pageRowArray.put(rowsList.get(i));
+			}
+			tableDataJsonObject.put("rows", pageRowArray);
+		}
+		
 		tableDataJsonObject.put("count", rowCnt);
 		return tableDataJsonObject;
 	}
@@ -419,12 +427,12 @@ public class TableDaoImpl{
 	
 	
 	@Transactional
-	public JSONObject getTableDataByNumber(List<Integer>columnIdList,String searchKey){
+	public JSONObject getTableDataByNumber(List<Integer>columnIdList,String searchKey,int page,int rows){
 		String columnArrayStr = convertToColumnArrayStr(columnIdList);
 		String converToSearchKeyStr = converToSearchKeyStr(searchKey);
 		String sql = "SELECT a.row_id,b.column_id,a.data_value,a.formula_type FROM tbl_prod_column b left join tbl_prod_data a on b.column_id = a.column_id where b.column_id in("+columnArrayStr+") and row_id in (select distinct(row_id) from tbl_prod_data where column_id in("+defaultColumnArrayStr+") and data_value_ignore Rlike '"+converToSearchKeyStr+"') order by a.row_id,b.column_id";
 		System.out.println(sql);
-		return getTableData(sql,searchKey);
+		return getTableData(sql,searchKey,page,rows);
 	}
 	
 	private String converToSearchKeyStr(String searchKey)
@@ -453,14 +461,99 @@ public class TableDaoImpl{
 	
 	
 	@Transactional
-	public void setFormula(int columnId,String categoryName,String formula){
-//		String sql = "update tbl_formula set formula='"+formula+"' where column_id="+columnId+" and category_id="+categoryId;
-//		System.out.println(sql);
-//		Query query = em.createNativeQuery(sql);
-//		query.executeUpdate();
-		String sql = "update tbl_prod_data set data_value="+formula+" where column_id="+columnId+" and row_id in(select a.row_id from (select row_id from tbl_prod_data where data_value="+categoryName+")a)";
-		Query query = em.createNativeQuery(sql);
-		query.executeUpdate();
+	public void setFormula(int columnId,int categoryId,String categoryName,String formula){
+		
+		String upadateColumnSql = "update tbl_formula set formula='"+formula+"' where column_id="+columnId+" and category_id="+categoryId;
+		System.out.println(upadateColumnSql);
+		Query upadateColumnQuery = em.createNativeQuery(upadateColumnSql);
+		upadateColumnQuery.executeUpdate();
+		
+		String updateDataSql = "update tbl_prod_data set data_value='"+formula+"', formula_type=1 where column_id="+columnId+" and row_id in(select a.row_id from (select row_id from tbl_prod_data where data_value='"+categoryName+"')a)";
+		System.out.println(updateDataSql);
+		Query  upadateDataQuery = em.createNativeQuery(updateDataSql);
+		upadateDataQuery.executeUpdate();
+		
+		String selectSql = "select row_id,column_id,data_value,formula_type from tbl_prod_data where  row_id in(select a.row_id from (select row_id from tbl_prod_data where data_value='"+categoryName+"')a)";
+		System.out.println(selectSql);
+		Query selectQuery = em.createNativeQuery(selectSql);
+		List list = selectQuery.getResultList();
+
+		int row_id = 0;
+		int pref_row_id = -1;
+		String field = "";
+		String value = "";
+		int formula_type = 0;
+		FormulaCell cell = null;
+		List<FormulaCell>cellList = new ArrayList<FormulaCell>();
+		List<TableData>tableDataList = new ArrayList<TableData>();
+		for(int i = 0;i<list.size();i++)
+		{
+			Object[]obj = (Object[])list.get(i);
+			if(obj[0]==null)
+			{
+				continue;
+			}
+			row_id = (Integer) obj[0];
+			field = obj[1].toString();
+			value = obj[2].toString();
+			formula_type = (Integer) obj[3];
+			if(row_id!=pref_row_id)
+			{
+				for(int j=0;j<tableDataList.size();j++)
+				{
+					if(tableDataList.get(j).getFormula_type()==1)
+					{
+						String postFix = Expression.toPostfix(tableDataList.get(j).getValue());
+						System.out.println(postFix);
+						String formulaValue = Expression.formulaValue(tableDataList,postFix);
+						cell = new FormulaCell(pref_row_id,Integer.parseInt(tableDataList.get(j).getField()),formulaValue);
+						cellList.add(cell);
+					}
+				}
+			
+					
+					
+				tableDataList = new ArrayList<TableData>();
+				TableData  tableData = new TableData();
+				tableData.setField(field);
+				tableData.setValue(value);
+				tableData.setFormula_type(formula_type);
+				tableDataList.add(tableData);
+				
+				pref_row_id = row_id;
+				
+			}
+			else
+			{
+				TableData  tableData = new TableData();
+				tableData.setField(field);
+				tableData.setValue(value);
+				tableData.setFormula_type(formula_type);
+				tableDataList.add(tableData);
+			}
+			
+		}
+	
+		for(int j=0;j<tableDataList.size();j++)
+		{
+			if(tableDataList.get(j).getFormula_type()==1)
+			{
+				String postFix = Expression.toPostfix(tableDataList.get(j).getValue());
+				String formulaValue = Expression.formulaValue(tableDataList,postFix);
+				cell = new FormulaCell(row_id,Integer.parseInt(tableDataList.get(j).getField()),formulaValue);
+				cellList.add(cell);	
+			}
+		}
+		
+		for(int i = 0;i<cellList.size();i++)
+		{
+			String updateFormulaData = "update tbl_prod_data set data_value='"+cellList.get(i).getValue() +"' where row_id="+cellList.get(i).getRow_id()+" and column_id="+cellList.get(i).getColumn_id();
+			System.out.println(updateFormulaData);
+			Query updateFormulaDataQuery  = em.createNativeQuery(updateFormulaData);
+			updateFormulaDataQuery.executeUpdate();
+		}
+		
+		
 	}
 	
 	@Transactional
@@ -495,7 +588,7 @@ public class TableDaoImpl{
 	
 	
 	@Transactional
-	public JSONObject getTableDataByFilter(List<Integer>columnIdList,List<FilterType>filterList)
+	public JSONObject getTableDataByFilter(List<Integer>columnIdList,List<FilterType>filterList,int pageIndex,int pageCount)
 	{
 		setFilterType(filterList);
 		
@@ -551,7 +644,7 @@ public class TableDaoImpl{
 		}
 		sql =  sql+rowIdSpace+" order by a.row_id,b.column_id";
 		System.out.println(sql);
-		return getTableData(sql,null);
+		return getTableData(sql,null,pageIndex,pageCount);
 	}
 	
 	//动态添加列待实现
@@ -620,6 +713,28 @@ public class TableDaoImpl{
 		System.out.println(sql);
 		Query query = em.createNativeQuery(sql);
 		query.executeUpdate();
+	}
+
+	@Transactional
+	public void editRows(JSONArray rowsArray) {
+		
+		for(int i = 0;i<rowsArray.length();i++)
+		{
+			JSONObject obj = rowsArray.getJSONObject(i);
+			String row_id = obj.getString("row_id");
+			Iterator it = obj.keys();  
+			it.next();
+	            while (it.hasNext()) {  
+	                String key = (String) it.next();  
+	                String value = obj.getString(key);  
+	                key = key.substring(1);
+	                String updateSql = "update tbl_prod_data set data_value='"+value+"' where column_id="+key+" and row_id="+row_id; 	
+	                Query updateQuery = em.createNativeQuery(updateSql);
+	                updateQuery.executeUpdate();
+	            }  
+		}
+		
+		
 	}
 	
 }

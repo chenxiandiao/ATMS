@@ -28,7 +28,7 @@ public class Expression {
 			{
 				case '+':
 				case '-':
-					while(chStack.isEmpty()&&chStack.firstElement()!="(")
+					while(!chStack.isEmpty()&&!chStack.lastElement().equals("("))
 					{
 						postfix +=chStack.pop();
 						postfix +=" ";
@@ -37,8 +37,8 @@ public class Expression {
 					i++;break;
 				case '*':
 				case '/':
-					while(chStack.isEmpty()&&(chStack.firstElement()=="*"
-					||chStack.firstElement()=="/"))
+					while(!chStack.isEmpty()&&(chStack.lastElement().equals("*")
+					||chStack.lastElement().equals("/")))
 					{
 						postfix +=chStack.pop();
 						postfix +=" ";
@@ -50,7 +50,7 @@ public class Expression {
 					i++;break;
 				case ')':
 					String out = chStack.pop();
-					while(out!=null&&out!="(")
+					while(out!=null&&!out.equals("("))
 					{
 						postfix += out;
 						postfix += " ";
@@ -92,6 +92,12 @@ public class Expression {
 	
 	public static String formulaValue(List<TableData>tableDataList,String postfix)
 	{
+		System.out.println(tableDataList.get(12).getValue());
+		System.out.println(tableDataList.get(24).getValue());
+		System.out.println(tableDataList.get(13).getValue());
+		System.out.println(tableDataList.get(22).getValue());
+		System.out.println(tableDataList.get(24).getValue());
+		System.out.println(tableDataList.get(23).getValue());
 		try
 		{
 			if(postfix==null||postfix.length()==0)
@@ -106,7 +112,7 @@ public class Expression {
 			while(i<len)
 			{
 				String ch = token[i];
-				if(ch!="+"&&ch!="-"&&ch!="*"&&ch!="/")
+				if(!ch.equals("+")&&!ch.equals("-")&&!ch.equals("*")&&!ch.equals("/"))
 				{
 					chStack.push(ch);
 					i++;
@@ -120,7 +126,7 @@ public class Expression {
 					String tmp = "";
 					if(yTmp.indexOf("C")!=-1)
 					{
-						tmp = tableDataList.get(Integer.parseInt(yTmp.substring(1))).getValue();
+						tmp = tableDataList.get(Integer.parseInt(yTmp.substring(1))-1).getValue();
 						if(tmp==null)
 						{
 							return "0";
@@ -137,7 +143,7 @@ public class Expression {
 					}
 					if(xTmp.indexOf("C")!=-1)
 					{
-						tmp = tableDataList.get(Integer.parseInt(yTmp.substring(1))).getValue();
+						tmp = tableDataList.get(Integer.parseInt(xTmp.substring(1))-1).getValue();
 						if(tmp==null)
 						{
 							return "0";
@@ -165,10 +171,13 @@ public class Expression {
 			}
 		}catch(Exception e)
 		{
-			System.out.println("error");
+			e.printStackTrace();
 		}
+		String result_value = chStack.pop();
+		System.out.println("expression value"+result_value);
 		DecimalFormat df = new DecimalFormat("#.00");
-		String result_value = String.valueOf(df.format(Double.parseDouble(chStack.pop())));
+		result_value = String.valueOf(df.format(Double.parseDouble(result_value)));
+		
 		return result_value;
 	}
 	
@@ -241,7 +250,7 @@ public class Expression {
 			}
 		}catch(Exception e)
 		{
-			System.out.println("error");
+			e.printStackTrace();
 		}
 		return Double.parseDouble(chStack.pop());
 	}

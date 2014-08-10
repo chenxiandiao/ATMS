@@ -39,6 +39,18 @@
 			}
 		});
 	}
+	
+	function getTableData()
+	{
+		$.ajax({
+			url:'/ATMS/TableController/showTableData',
+			type:'get',
+			dataType:'json',
+			success:function(data){
+				
+			}
+		})
+	}
 		
 	function showTable()
 	{
@@ -176,15 +188,58 @@
 		});
 		
 	}
+	
+	function setFormulaClickListener(){
+		$("#formulaSet").click(function(){
+			var field = $("#field").val();
+			var formula = $("#formula").val();
+			$.ajax({
+				url:'/ATMS/TableController/setFormula',
+				type:'post',
+				dataType:'json',
+				data:{"columnId":field,"formula":formula,"categoryId":1,"categoryName":'前'},
+				success:function(data){
+					alert(data.msg);
+				}
+			})
+		});
+	}
+	
+	var commitRowsChange = function () {
+		var rowsValue = new Array();
+		var row1 = new Object();
+		row1.row_id = "1";
+		row1.C1 = "11";
+		row1.C2 = "11";
+		var row2 = new Object();
+		row2.row_id = "2";
+		row2.C1 = "22";
+		row2.C2 = "22";
+		rowsValue.push(row1);
+		rowsValue.push(row2);
+		rowsValue.toString();
+		$.ajax({
+			url : '/ATMS/TableController/editRows',
+			type : 'POST',
+			dataType : 'json',
+			data : {rowsValue:JSON.stringify(rowsValue)},
+			success : function (data) {
+				alert(data.msg);
+			}
+		});
+	}
 	$(document).ready(function(){
 		
 		uploadBtnInit();
-		getColumnHeader();
+		commitRowsChange();
+		//getColumnHeader();
 		/*showTable();
 		setShowColumnBtnClickListener();
 		searchBtnClick();*/
 		//getFilter();
 		//showTableByFilter();
+		//getTableData();
+		//setFormulaClickListener();
 	});
 	</script>
 </head>
@@ -197,8 +252,10 @@
 	</div>
 	<div>
 		<label>列ID:</label>
-		<input id="field" type="text" style="width:800px"/>
-		<input id="formuulaSet" type="button" value="设置"/>
+		<input id="field" type="text" style="width:40px"/>
+		<label>公式:</label>
+		<input id="formula" type="text" style="width:800px"/>
+		<input id="formulaSet" type="button" value="设置"/>
 	</div>
 	<table id="dg"></table>
 </body>
